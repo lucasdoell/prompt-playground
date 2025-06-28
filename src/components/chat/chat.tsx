@@ -32,6 +32,7 @@ export function Chat({
   } = useChatSettings();
 
   const inputRefs = useRef<{ [key: string]: HTMLTextAreaElement | null }>({});
+  const submitRefs = useRef<{ [key: string]: () => Promise<void> }>({});
 
   // Update models when initialModels changes
   useEffect(() => {
@@ -71,11 +72,31 @@ export function Chat({
     }
   };
 
-  const handleSendMessage = () => {
-    // Clear input after message is sent (for linked inputs)
+  const handleSendMessage = async () => {
     if (linkedInputs) {
+      // When linked, send message to all models
+      const messageContent = currentInput.trim();
+      if (!messageContent) return;
+
+      // Clear input first
       setCurrentInput("");
+
+      // Send to all models
+      await Promise.all(
+        Object.values(submitRefs.current).map((submitFn) => submitFn())
+      );
     }
+  };
+
+  const registerSubmitHandler = (
+    modelId: string,
+    submitFn: () => Promise<void>
+  ) => {
+    submitRefs.current[modelId] = submitFn;
+  };
+
+  const unregisterSubmitHandler = (modelId: string) => {
+    delete submitRefs.current[modelId];
   };
 
   const handleUpdateMessages = (
@@ -95,6 +116,7 @@ export function Chat({
 
   const removeModel = (modelId: string) => {
     if (models.length <= 1) return;
+    unregisterSubmitHandler(modelId);
     onRemoveModel?.(modelId);
   };
 
@@ -118,6 +140,8 @@ export function Chat({
               onInputChange={(value) => handleInputChange(value, model.id)}
               onSendMessage={handleSendMessage}
               onUpdateMessages={handleUpdateMessages}
+              onRegisterSubmitHandler={registerSubmitHandler}
+              onUnregisterSubmitHandler={unregisterSubmitHandler}
             />
           ))}
         </div>

@@ -16,7 +16,7 @@ import type { UIMessage } from "ai";
 import { DefaultChatTransport } from "ai";
 import { AnimatePresence, motion } from "motion/react";
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ChatMessage } from "./chat-message";
 import { TypingIndicator } from "./typing-indicator";
 
@@ -27,7 +27,7 @@ interface ChatModelComponentProps {
   linkedInputs: boolean;
   currentInput: string;
   onInputChange: (value: string) => void;
-  onSendMessage: () => void;
+  onSendMessage: () => Promise<void>;
   onUpdateMessages: (
     modelId: string,
     messages: Array<{
@@ -36,6 +36,11 @@ interface ChatModelComponentProps {
       timestamp: Date;
     }>
   ) => void;
+  onRegisterSubmitHandler: (
+    modelId: string,
+    submitFn: () => Promise<void>
+  ) => void;
+  onUnregisterSubmitHandler: (modelId: string) => void;
 }
 
 const transitionConfig = {
@@ -53,6 +58,8 @@ export function ChatModelComponent({
   onInputChange,
   onSendMessage,
   onUpdateMessages,
+  onRegisterSubmitHandler,
+  onUnregisterSubmitHandler,
 }: ChatModelComponentProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const xIconRef = useRef<XIconHandle>(null);
@@ -96,6 +103,38 @@ export function ChatModelComponent({
   const showTypingIndicator = status === "submitted";
   const inputValue = linkedInputs ? currentInput : localInput;
 
+  // Register submit handler for this model
+  const handleModelSubmit = useCallback(async () => {
+    const messageContent = linkedInputs
+      ? currentInput.trim()
+      : localInput.trim();
+    if (!messageContent || isInputDisabled) return;
+
+    // Send message using AI SDK
+    await sendMessage({
+      role: "user",
+      parts: [{ type: "text", text: messageContent }],
+    });
+
+    // Clear local input if not linked (linked inputs are cleared by parent)
+    if (!linkedInputs) {
+      setLocalInput("");
+    }
+  }, [linkedInputs, currentInput, localInput, isInputDisabled, sendMessage]);
+
+  // Register/unregister submit handler
+  useEffect(() => {
+    onRegisterSubmitHandler(model.id, handleModelSubmit);
+    return () => {
+      onUnregisterSubmitHandler(model.id);
+    };
+  }, [
+    model.id,
+    handleModelSubmit,
+    onRegisterSubmitHandler,
+    onUnregisterSubmitHandler,
+  ]);
+
   const handleInputChangeWrapper = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     if (linkedInputs) {
@@ -109,21 +148,13 @@ export function ChatModelComponent({
     e.preventDefault();
     if (!inputValue.trim() || isInputDisabled) return;
 
-    const messageContent = inputValue.trim();
-
-    // Clear input
     if (linkedInputs) {
-      onInputChange("");
-      onSendMessage();
+      // For linked inputs, use the shared handler
+      await onSendMessage();
     } else {
-      setLocalInput("");
+      // For individual inputs, handle locally
+      await handleModelSubmit();
     }
-
-    // Send message using AI SDK
-    await sendMessage({
-      role: "user",
-      parts: [{ type: "text", text: messageContent }],
-    });
   };
 
   useEffect(() => {

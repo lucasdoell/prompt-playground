@@ -137,7 +137,11 @@ export function ChatControls({
                 </div>
                 <Badge variant="outline" className="text-xs">
                   {model.messages.filter((m) => m.role === "assistant").length}{" "}
-                  responses
+                  response
+                  {model.messages.filter((m) => m.role === "assistant")
+                    .length === 1
+                    ? ""
+                    : "s"}
                 </Badge>
               </div>
             ))}

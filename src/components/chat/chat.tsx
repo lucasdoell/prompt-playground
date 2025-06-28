@@ -1,5 +1,6 @@
 "use client";
 
+import { useChatSettings } from "@/contexts/chat-settings-context";
 import type { AvailableModel, ChatModel } from "@/types/chat";
 import { useEffect, useRef, useState } from "react";
 import { ChatControls } from "./chat-controls";
@@ -19,6 +20,17 @@ export function Chat({
   onRemoveModel,
 }: ChatProps) {
   const [models, setModels] = useState<ChatModel[]>([]);
+  const [currentInput, setCurrentInput] = useState("");
+  const {
+    settings,
+    setSystemPrompt,
+    setTemperature,
+    setMaxOutputTokens,
+    setTopP,
+    setTopK,
+  } = useChatSettings();
+
+  const inputRefs = useRef<{ [key: string]: HTMLTextAreaElement | null }>({});
 
   // Update models when initialModels changes
   useEffect(() => {
@@ -45,85 +57,6 @@ export function Chat({
     });
   }, [initialModels, availableModels]);
 
-  const [currentInput, setCurrentInput] = useState("");
-  const [systemPrompt, setSystemPrompt] = useState(
-    "You are a helpful AI assistant."
-  );
-  const [temperature, setTemperature] = useState(0.2);
-  const [maxOutputTokens, setMaxOutputTokens] = useState(1024);
-  const [topP, setTopP] = useState(0.95);
-  const [topK, setTopK] = useState(30);
-
-  const inputRefs = useRef<{ [key: string]: HTMLTextAreaElement | null }>({});
-
-  const sendMessage = async (modelId?: string) => {
-    if (!currentInput.trim()) return;
-
-    const targetModels = modelId
-      ? [models.find((m) => m.id === modelId)!]
-      : models;
-    const userMessage = {
-      role: "user" as const,
-      content: currentInput,
-      timestamp: new Date(),
-    };
-
-    // Add user message to all target models
-    setModels((prev) =>
-      prev.map((model) =>
-        targetModels.some((t) => t.id === model.id)
-          ? {
-              ...model,
-              messages: [...model.messages, userMessage],
-              isTyping: true,
-            }
-          : model
-      )
-    );
-
-    setCurrentInput("");
-
-    // Simulate AI responses
-    for (const model of targetModels) {
-      setTimeout(() => {
-        const responses = {
-          "gpt-4":
-            "I'm GPT-4, and I'd be happy to help you with that! This is a simulated response for demonstration purposes.",
-          "gpt-3.5":
-            "Hello! I'm GPT-3.5 Turbo. Here's my response to your message.",
-          "claude-3-opus":
-            "Hi there! Claude-3 Opus here. I appreciate your question and here's my thoughtful response.",
-          "claude-3-sonnet":
-            "Greetings! This is Claude-3 Sonnet with a balanced and helpful response.",
-          "gemini-pro":
-            "Hello! Gemini Pro at your service. Here's my analysis and response.",
-          "llama-2-70b":
-            "Hey! Llama 2 here, ready to assist you with your query.",
-        };
-
-        const assistantMessage = {
-          role: "assistant" as const,
-          content:
-            responses[model.id as keyof typeof responses] ||
-            "This is a simulated response.",
-          timestamp: new Date(),
-        };
-
-        setModels((prev) =>
-          prev.map((m) =>
-            m.id === model.id
-              ? {
-                  ...m,
-                  messages: [...m.messages, assistantMessage],
-                  isTyping: false,
-                }
-              : m
-          )
-        );
-      }, Math.random() * 2000 + 1000); // Random delay between 1-3 seconds
-    }
-  };
-
   const handleInputChange = (value: string, modelId?: string) => {
     if (linkedInputs) {
       setCurrentInput(value);
@@ -135,6 +68,28 @@ export function Chat({
       // Handle individual model input when not linked
       setCurrentInput(value);
     }
+  };
+
+  const handleSendMessage = () => {
+    // Clear input after message is sent (for linked inputs)
+    if (linkedInputs) {
+      setCurrentInput("");
+    }
+  };
+
+  const handleUpdateMessages = (
+    modelId: string,
+    messages: Array<{
+      role: "user" | "assistant";
+      content: string;
+      timestamp: Date;
+    }>
+  ) => {
+    setModels((prevModels) =>
+      prevModels.map((model) =>
+        model.id === modelId ? { ...model, messages } : model
+      )
+    );
   };
 
   const removeModel = (modelId: string) => {
@@ -160,9 +115,8 @@ export function Chat({
               linkedInputs={linkedInputs}
               currentInput={currentInput}
               onInputChange={(value) => handleInputChange(value, model.id)}
-              onSendMessage={() =>
-                sendMessage(linkedInputs ? undefined : model.id)
-              }
+              onSendMessage={handleSendMessage}
+              onUpdateMessages={handleUpdateMessages}
             />
           ))}
         </div>
@@ -170,15 +124,15 @@ export function Chat({
 
       {/* Controls Panel */}
       <ChatControls
-        systemPrompt={systemPrompt}
+        systemPrompt={settings.systemPrompt}
         onSystemPromptChange={setSystemPrompt}
-        temperature={temperature}
+        temperature={settings.temperature}
         onTemperatureChange={setTemperature}
-        maxOutputTokens={maxOutputTokens}
+        maxOutputTokens={settings.maxOutputTokens}
         onMaxOutputTokensChange={setMaxOutputTokens}
-        topP={topP}
+        topP={settings.topP}
         onTopPChange={setTopP}
-        topK={topK}
+        topK={settings.topK}
         onTopKChange={setTopK}
         models={models}
       />

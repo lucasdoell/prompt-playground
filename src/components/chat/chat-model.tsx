@@ -2,12 +2,16 @@
 
 import type React from "react";
 
+import {
+  ArrowBigUpIcon,
+  type ArrowBigUpIconHandle,
+} from "@/components/icons/arrow-big-up";
+import { XIcon, type XIconHandle } from "@/components/icons/x";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { ChatModel } from "@/types/chat";
-import { Send, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { TypingIndicator } from "./typing-indicator";
@@ -38,6 +42,8 @@ export function ChatModelComponent({
   onSendMessage,
 }: ChatModelComponentProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const xIconRef = useRef<XIconHandle>(null);
+  const arrowIconRef = useRef<ArrowBigUpIconHandle>(null);
   const [localInput, setLocalInput] = useState("");
 
   const inputValue = linkedInputs ? currentInput : localInput;
@@ -84,8 +90,14 @@ export function ChatModelComponent({
             </Badge>
           </CardTitle>
           {canRemove && (
-            <Button variant="ghost" size="sm" onClick={onRemove}>
-              <X className="w-4 h-4" />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onRemove}
+              onMouseEnter={() => xIconRef.current?.startAnimation()}
+              onMouseLeave={() => xIconRef.current?.stopAnimation()}
+            >
+              <XIcon ref={xIconRef} size={16} />
             </Button>
           )}
         </div>
@@ -177,8 +189,10 @@ export function ChatModelComponent({
               size="sm"
               className="ml-2 h-10 w-10 rounded-full p-0"
               disabled={!inputValue.trim()}
+              onMouseEnter={() => arrowIconRef.current?.startAnimation()}
+              onMouseLeave={() => arrowIconRef.current?.stopAnimation()}
             >
-              <Send className="w-4 h-4" />
+              <ArrowBigUpIcon ref={arrowIconRef} size={16} />
             </Button>
           </form>
         </div>

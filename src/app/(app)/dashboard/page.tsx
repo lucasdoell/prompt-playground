@@ -20,7 +20,7 @@ import { useState } from "react";
 export default function ChatPlayground() {
   const [linkedInputs, setLinkedInputs] = useState(true);
   const [activeModelIds, setActiveModelIds] = useState<AvailableModelNames[]>([
-    "gpt-4o",
+    "gpt-4.1",
   ]);
 
   const handleAddModel = (modelId: AvailableModelNames) => {

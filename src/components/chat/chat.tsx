@@ -49,8 +49,10 @@ export function Chat({
   const [systemPrompt, setSystemPrompt] = useState(
     "You are a helpful AI assistant."
   );
-  const [temperature, setTemperature] = useState([0.7]);
-  const [maxTokens, setMaxTokens] = useState([1000]);
+  const [temperature, setTemperature] = useState(0.2);
+  const [maxOutputTokens, setMaxOutputTokens] = useState(1024);
+  const [topP, setTopP] = useState(0.95);
+  const [topK, setTopK] = useState(30);
 
   const inputRefs = useRef<{ [key: string]: HTMLTextAreaElement | null }>({});
 
@@ -172,8 +174,12 @@ export function Chat({
         onSystemPromptChange={setSystemPrompt}
         temperature={temperature}
         onTemperatureChange={setTemperature}
-        maxTokens={maxTokens}
-        onMaxTokensChange={setMaxTokens}
+        maxOutputTokens={maxOutputTokens}
+        onMaxOutputTokensChange={setMaxOutputTokens}
+        topP={topP}
+        onTopPChange={setTopP}
+        topK={topK}
+        onTopKChange={setTopK}
         models={models}
       />
     </div>

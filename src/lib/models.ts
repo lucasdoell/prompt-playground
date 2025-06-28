@@ -57,6 +57,7 @@ export const availableModels = [
     description:
       "OpenAI's o4-mini delivers fast, cost-efficient reasoning with exceptional performance for its size, particularly excelling in math (best-performing on AIME benchmarks), coding, and visual tasks.",
     capabilities: ["Math", "Code", "Visual Analysis", "Reasoning"],
+    featured: true,
   },
   {
     id: "gpt-4.1",
@@ -120,6 +121,7 @@ export const availableModels = [
     description:
       "Claude Sonnet 4 significantly improves on Sonnet 3.7's industry-leading capabilities, excelling in coding with a state-of-the-art 72.7% on SWE-bench. The model balances performance and efficiency for internal and external use cases, with enhanced steerability for greater control over implementations. While not matching Opus 4 in most domains, it delivers an optimal mix of capability and practicality.",
     capabilities: ["Code", "Software Engineering", "Steerability", "Reasoning"],
+    featured: true,
   },
   {
     id: "claude-3-haiku",
@@ -237,6 +239,7 @@ export const availableModels = [
       "Code",
       "Analysis",
     ],
+    featured: true,
   },
 ] as const satisfies readonly AvailableModel[];
 

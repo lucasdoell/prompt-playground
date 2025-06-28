@@ -20,6 +20,7 @@ export interface AvailableModel {
   color: string;
   description: string;
   capabilities: string[];
+  featured?: boolean;
 }
 
 export interface ChatMessage {

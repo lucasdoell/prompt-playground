@@ -21,5 +21,14 @@ export async function POST(req: Request) {
     maxOutputTokens,
   });
 
-  return result.toUIMessageStreamResponse();
+  return result.toUIMessageStreamResponse({
+    sendReasoning: true,
+    messageMetadata: ({ part }) => {
+      if (part.type === "start") {
+        return {
+          timestamp: new Date().toISOString(),
+        };
+      }
+    },
+  });
 }

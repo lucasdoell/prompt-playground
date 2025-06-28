@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useChatSettings } from "@/contexts/chat-settings-context";
 import type { ChatModel } from "@/types/chat";
 import { useChat } from "@ai-sdk/react";
+import type { UIMessage } from "ai";
 import { DefaultChatTransport } from "ai";
 import { AnimatePresence, motion } from "motion/react";
 import type React from "react";
@@ -58,7 +59,9 @@ export function ChatModelComponent({
   const [localInput, setLocalInput] = useState("");
   const { settings } = useChatSettings();
 
-  const { messages, sendMessage, status } = useChat({
+  const { messages, sendMessage, status } = useChat<
+    UIMessage<{ timestamp?: string }>
+  >({
     transport: new DefaultChatTransport({
       api: "/api/chat",
       headers: {
@@ -89,7 +92,7 @@ export function ChatModelComponent({
 
   const isLoading = status === "streaming" || status === "submitted";
   const isInputDisabled = status === "streaming" || status === "submitted";
-  const showTypingIndicator = status === "submitted" || status === "streaming";
+  const showTypingIndicator = status === "submitted";
   const inputValue = linkedInputs ? currentInput : localInput;
 
   const handleInputChangeWrapper = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -192,9 +195,18 @@ export function ChatModelComponent({
                         <div className="px-3 py-2 text-sm leading-relaxed overflow-wrap-anywhere">
                           {textPart?.type === "text" ? textPart.text : ""}
                         </div>
-                        <div className="px-3 pb-1 text-xs opacity-70">
-                          {new Date().toLocaleTimeString()}
-                        </div>
+                        {status !== "submitted" &&
+                          status !== "streaming" &&
+                          message.metadata?.timestamp && (
+                            <div className="px-3 pb-1 text-xs opacity-70">
+                              {new Date(
+                                message.metadata.timestamp
+                              ).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </div>
+                          )}
                       </div>
                     </motion.div>
                   );

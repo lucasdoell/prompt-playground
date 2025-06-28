@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useChatSettings } from "@/contexts/chat-settings-context";
-import type { ChatModel } from "@/types/chat";
+import type { ChatModel, EnhancedChatMessage, MessagePart } from "@/types/chat";
 import { useChat } from "@ai-sdk/react";
 import type { UIMessage } from "ai";
 import { DefaultChatTransport } from "ai";
@@ -48,6 +48,75 @@ const transitionConfig = {
   duration: 0.3,
   bounce: 0.1,
 };
+
+// Helper function to convert AI SDK UIMessage parts to our MessagePart types
+function convertUIMessagePartsToMessageParts(
+  parts: Record<string, unknown>[]
+): MessagePart[] {
+  return parts.map((part): MessagePart => {
+    const partType = part.type as string;
+    switch (partType) {
+      case "text":
+        return {
+          type: "text",
+          text: (part.text as string) || "",
+        };
+      case "reasoning":
+        return {
+          type: "reasoning",
+          text: (part.text as string) || "",
+        };
+      case "tool-invocation":
+        const toolInvocation = part.toolInvocation as
+          | Record<string, unknown>
+          | undefined;
+        return {
+          type: "tool-invocation",
+          toolInvocation: {
+            state:
+              (toolInvocation?.state as
+                | "partial-call"
+                | "call"
+                | "result"
+                | "error") || "call",
+            toolCallId: (toolInvocation?.toolCallId as string) || "",
+            toolName: (toolInvocation?.toolName as string) || "",
+            args: toolInvocation?.args as Record<string, unknown>,
+            result: toolInvocation?.result as Record<string, unknown>,
+            errorMessage: toolInvocation?.errorMessage as string,
+          },
+        };
+      case "source":
+        const source = part.source as Record<string, unknown> | undefined;
+        return {
+          type: "source",
+          source: {
+            sourceType: "url",
+            id: (source?.id as string) || "",
+            url: (source?.url as string) || "",
+            title: source?.title as string,
+          },
+        };
+      case "file":
+        return {
+          type: "file",
+          mediaType: (part.mediaType as string) || "",
+          filename: part.filename as string,
+          url: (part.url as string) || "",
+        };
+      case "step-start":
+        return {
+          type: "step-start",
+        };
+      default:
+        // Fallback for unknown part types - treat as text
+        return {
+          type: "text",
+          text: (part.text as string) || JSON.stringify(part),
+        };
+    }
+  });
+}
 
 export function ChatModelComponent({
   model,
@@ -219,12 +288,19 @@ export function ChatModelComponent({
               <div className="flex-1" />
               <AnimatePresence mode="wait">
                 {messages.map((message, index) => {
-                  const textPart = message.parts.find(
-                    (part) => part.type === "text"
-                  );
                   const timestamp = message.metadata?.timestamp
                     ? new Date(message.metadata.timestamp)
                     : new Date();
+
+                  // Convert AI SDK UIMessage to our EnhancedChatMessage format
+                  const enhancedMessage: EnhancedChatMessage = {
+                    role: message.role as "user" | "assistant",
+                    parts: convertUIMessagePartsToMessageParts(
+                      message.parts || []
+                    ),
+                    timestamp: timestamp,
+                    metadata: message.metadata,
+                  };
 
                   return (
                     <motion.div
@@ -236,14 +312,7 @@ export function ChatModelComponent({
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.8 }}
                     >
-                      <ChatMessage
-                        message={{
-                          role: message.role as "user" | "assistant",
-                          content:
-                            textPart?.type === "text" ? textPart.text : "",
-                          timestamp: timestamp,
-                        }}
-                      />
+                      <ChatMessage message={enhancedMessage} />
                     </motion.div>
                   );
                 })}

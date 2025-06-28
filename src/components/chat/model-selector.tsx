@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/tooltip";
 import { AvailableModelNames } from "@/lib/models";
 import type { AvailableModel } from "@/types/chat";
-import { Filter, Search } from "lucide-react";
+import { Filter, Search, Star } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 
 interface ModelSelectorProps {
@@ -53,7 +53,7 @@ export function ModelSelector({
       (model) => !activeModelIds.includes(model.id)
     );
 
-    return availableToAdd.filter((model) => {
+    const filtered = availableToAdd.filter((model) => {
       const matchesSearch =
         model.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         model.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -65,6 +65,13 @@ export function ModelSelector({
         selectedProvider === "all" || model.provider === selectedProvider;
 
       return matchesSearch && matchesProvider;
+    });
+
+    // Sort to pin featured models to the top
+    return filtered.sort((a, b) => {
+      if (a.featured && !b.featured) return -1;
+      if (!a.featured && b.featured) return 1;
+      return 0;
     });
   }, [availableModels, activeModelIds, searchTerm, selectedProvider]);
 
@@ -167,6 +174,16 @@ export function ModelSelector({
                             <span className="font-medium text-sm">
                               {model.name}
                             </span>
+                            {model.featured && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Star className="w-3.5 h-3.5 text-yellow-500 fill-current" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Featured Model</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
                             <Badge
                               variant="outline"
                               className="text-xs ml-auto"

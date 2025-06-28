@@ -1,5 +1,6 @@
 "use client";
 
+import { PlusIcon, type PlusIconHandle } from "@/components/icons/plus";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,8 +24,8 @@ import {
 } from "@/components/ui/tooltip";
 import { AvailableModelNames } from "@/lib/models";
 import type { AvailableModel } from "@/types/chat";
-import { Filter, Plus, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Filter, Search } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
 
 interface ModelSelectorProps {
   availableModels: readonly AvailableModel[];
@@ -40,6 +41,7 @@ export function ModelSelector({
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProvider, setSelectedProvider] = useState<string>("all");
   const [isOpen, setIsOpen] = useState(false);
+  const plusIconRef = useRef<PlusIconHandle>(null);
 
   const providers = useMemo(() => {
     const providerSet = new Set(availableModels.map((model) => model.provider));
@@ -73,6 +75,14 @@ export function ModelSelector({
     setSelectedProvider("all");
   }
 
+  function handleButtonMouseEnter() {
+    plusIconRef.current?.startAnimation();
+  }
+
+  function handleButtonMouseLeave() {
+    plusIconRef.current?.stopAnimation();
+  }
+
   return (
     <TooltipProvider>
       <Tooltip>
@@ -83,8 +93,10 @@ export function ModelSelector({
                 variant="outline"
                 size="sm"
                 className="w-9 h-9 p-0 bg-transparent"
+                onMouseEnter={handleButtonMouseEnter}
+                onMouseLeave={handleButtonMouseLeave}
               >
-                <Plus className="w-4 h-4" />
+                <PlusIcon ref={plusIconRef} size={16} />
               </Button>
             </PopoverTrigger>
             <PopoverContent

@@ -67,6 +67,7 @@ export function ChatModelComponent({
   const [localInput, setLocalInput] = useState("");
   const { settings } = useChatSettings();
   const settingsRef = useRef(settings);
+  const lastSyncedCountRef = useRef(0);
 
   // Keep the ref updated with current settings
   useEffect(() => {
@@ -95,8 +96,15 @@ export function ChatModelComponent({
         },
       }),
     }),
-    onFinish: () => {
-      // Update parent component with new messages when AI finishes
+  });
+
+  // Update parent component when messages change (only when count changes and not streaming)
+  useEffect(() => {
+    if (
+      messages.length > lastSyncedCountRef.current &&
+      status !== "streaming" &&
+      status !== "submitted"
+    ) {
       const updatedMessages = messages.map((msg) => {
         const textPart = msg.parts.find((part) => part.type === "text");
         return {
@@ -106,8 +114,9 @@ export function ChatModelComponent({
         };
       });
       onUpdateMessages(model.id, updatedMessages);
-    },
-  });
+      lastSyncedCountRef.current = messages.length;
+    }
+  }, [messages.length, status, model.id, onUpdateMessages, messages]);
 
   const isLoading = status === "streaming" || status === "submitted";
   const isInputDisabled = status === "streaming" || status === "submitted";

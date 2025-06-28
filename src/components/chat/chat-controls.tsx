@@ -1,5 +1,6 @@
 "use client";
 
+import { SettingsGearIcon } from "@/components/icons/settings-gear";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,7 +9,6 @@ import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import type { ChatModel } from "@/types/chat";
-import { Settings } from "lucide-react";
 
 interface ChatControlsProps {
   systemPrompt: string;
@@ -41,7 +41,7 @@ export function ChatControls({
     <Card className="w-80 h-full flex flex-col">
       <CardHeader className="flex-shrink-0">
         <CardTitle className="flex items-center gap-2">
-          <Settings className="w-5 h-5" />
+          <SettingsGearIcon size={20} />
           Controls
         </CardTitle>
       </CardHeader>

@@ -2,6 +2,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
@@ -12,10 +13,14 @@ import { Settings } from "lucide-react";
 interface ChatControlsProps {
   systemPrompt: string;
   onSystemPromptChange: (value: string) => void;
-  temperature: number[];
-  onTemperatureChange: (value: number[]) => void;
-  maxTokens: number[];
-  onMaxTokensChange: (value: number[]) => void;
+  temperature: number;
+  onTemperatureChange: (value: number) => void;
+  topP?: number;
+  onTopPChange?: (value: number) => void;
+  topK?: number;
+  onTopKChange?: (value: number) => void;
+  maxOutputTokens?: number;
+  onMaxOutputTokensChange?: (value: number) => void;
   models: ChatModel[];
 }
 
@@ -24,19 +29,23 @@ export function ChatControls({
   onSystemPromptChange,
   temperature,
   onTemperatureChange,
-  maxTokens,
-  onMaxTokensChange,
+  topP,
+  onTopPChange,
+  topK,
+  onTopKChange,
+  maxOutputTokens,
+  onMaxOutputTokensChange,
   models,
 }: ChatControlsProps) {
   return (
-    <Card className="w-80 h-fit">
-      <CardHeader>
+    <Card className="w-80 h-full flex flex-col">
+      <CardHeader className="flex-shrink-0">
         <CardTitle className="flex items-center gap-2">
           <Settings className="w-5 h-5" />
           Controls
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 overflow-auto flex-1">
         <div className="space-y-2">
           <Label htmlFor="system-prompt">System Prompt</Label>
           <Textarea
@@ -49,11 +58,11 @@ export function ChatControls({
         </div>
 
         <div className="space-y-2">
-          <Label>Temperature: {temperature[0]}</Label>
+          <Label>Temperature: {temperature}</Label>
           <Slider
-            value={temperature}
-            onValueChange={onTemperatureChange}
-            max={2}
+            value={[temperature]}
+            onValueChange={([value]) => onTemperatureChange(value)}
+            max={1}
             min={0}
             step={0.1}
             className="w-full"
@@ -64,10 +73,44 @@ export function ChatControls({
         </div>
 
         <div className="space-y-2">
-          <Label>Max Tokens: {maxTokens[0]}</Label>
+          <Label htmlFor="top-p">Top P</Label>
+          <Input
+            id="top-p"
+            type="number"
+            min={0}
+            max={1}
+            step={0.01}
+            value={topP || ""}
+            onChange={(e) => onTopPChange?.(parseFloat(e.target.value) || 0)}
+            placeholder="0.9"
+          />
+          <p className="text-xs text-muted-foreground">
+            Controls the diversity of the response (higher = more diverse)
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="top-k">Top K</Label>
+          <Input
+            id="top-k"
+            type="number"
+            min={0}
+            max={1}
+            step={0.01}
+            value={topK || ""}
+            onChange={(e) => onTopKChange?.(parseFloat(e.target.value) || 0)}
+            placeholder="0.95"
+          />
+          <p className="text-xs text-muted-foreground">
+            Controls the token selection threshold (higher = more diverse)
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Max Output Tokens: {maxOutputTokens}</Label>
           <Slider
-            value={maxTokens}
-            onValueChange={onMaxTokensChange}
+            value={maxOutputTokens ? [maxOutputTokens] : undefined}
+            onValueChange={([value]) => onMaxOutputTokensChange?.(value)}
             max={4000}
             min={100}
             step={100}

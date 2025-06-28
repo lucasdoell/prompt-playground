@@ -113,10 +113,7 @@ export function ChatModelComponent({
                       className={`max-w-[80%] break-words rounded-2xl overflow-hidden ${
                         message.role === "user"
                           ? "bg-blue-500 text-white"
-                          : `${model.color.replace(
-                              "bg-",
-                              "bg-opacity-20 bg-"
-                            )} text-foreground`
+                          : "bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-gray-100"
                       }`}
                     >
                       <div className="px-3 py-2 text-sm leading-relaxed overflow-wrap-anywhere">
@@ -135,12 +132,7 @@ export function ChatModelComponent({
                   animate={{ opacity: 1, scale: 1 }}
                   className="w-full flex justify-start"
                 >
-                  <div
-                    className={`max-w-[80%] rounded-2xl ${model.color.replace(
-                      "bg-",
-                      "bg-opacity-20 bg-"
-                    )}`}
-                  >
+                  <div className="max-w-[80%] rounded-2xl bg-gray-200 dark:bg-gray-700">
                     <TypingIndicator />
                   </div>
                 </motion.div>

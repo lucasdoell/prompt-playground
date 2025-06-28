@@ -37,7 +37,7 @@ export function ChatModelComponent({
   onInputChange,
   onSendMessage,
 }: ChatModelComponentProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [localInput, setLocalInput] = useState("");
 
   const inputValue = linkedInputs ? currentInput : localInput;
@@ -62,14 +62,19 @@ export function ChatModelComponent({
   };
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (scrollAreaRef.current) {
+      const viewport = scrollAreaRef.current.querySelector(
+        "[data-radix-scroll-area-viewport]"
+      ) as HTMLElement;
+      if (viewport) {
+        viewport.scrollTop = viewport.scrollHeight;
+      }
     }
   }, [model.messages, model.isTyping]);
 
   return (
     <Card className="flex flex-col h-[600px]">
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-3 flex-shrink-0">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
             <div className={`w-3 h-3 rounded-full ${model.color}`} />
@@ -85,53 +90,66 @@ export function ChatModelComponent({
           )}
         </div>
       </CardHeader>
-      <CardContent className="flex flex-col flex-1 p-4 pt-0">
-        <ScrollArea className="flex-1 pr-4" ref={scrollRef}>
-          <div className="flex flex-col items-end justify-end min-h-full pb-4">
-            <AnimatePresence mode="wait">
-              {model.messages.map((message, index) => (
+      <CardContent className="flex flex-col flex-1 p-4 pt-0 min-h-0">
+        <div className="flex-1 min-h-0">
+          <ScrollArea className="h-full w-full" ref={scrollAreaRef}>
+            <div className="flex flex-col gap-2 p-1 min-h-full">
+              <div className="flex-1" />
+              <AnimatePresence mode="wait">
+                {model.messages.map((message, index) => (
+                  <motion.div
+                    key={`${model.id}-${index}`}
+                    layout="position"
+                    className={`w-full flex ${
+                      message.role === "user" ? "justify-end" : "justify-start"
+                    }`}
+                    layoutId={`container-${model.id}-[${index}]`}
+                    transition={transitionConfig}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                  >
+                    <div
+                      className={`max-w-[80%] break-words rounded-2xl overflow-hidden ${
+                        message.role === "user"
+                          ? "bg-blue-500 text-white"
+                          : `${model.color.replace(
+                              "bg-",
+                              "bg-opacity-20 bg-"
+                            )} text-foreground`
+                      }`}
+                    >
+                      <div className="px-3 py-2 text-sm leading-relaxed overflow-wrap-anywhere">
+                        {message.content}
+                      </div>
+                      <div className="px-3 pb-1 text-xs opacity-70">
+                        {message.timestamp.toLocaleTimeString()}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+              {model.isTyping && (
                 <motion.div
-                  key={`${model.id}-${index}`}
-                  layout="position"
-                  className={`z-10 mt-2 max-w-[80%] break-words rounded-2xl ${
-                    message.role === "user"
-                      ? "bg-blue-500 text-white self-end"
-                      : `${model.color.replace(
-                          "bg-",
-                          "bg-opacity-20 bg-"
-                        )} text-foreground self-start`
-                  }`}
-                  layoutId={`container-${model.id}-[${index}]`}
-                  transition={transitionConfig}
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="w-full flex justify-start"
                 >
-                  <div className="px-3 py-2 text-sm leading-relaxed">
-                    {message.content}
-                  </div>
-                  <div className="px-3 pb-1 text-xs opacity-70">
-                    {message.timestamp.toLocaleTimeString()}
+                  <div
+                    className={`max-w-[80%] rounded-2xl ${model.color.replace(
+                      "bg-",
+                      "bg-opacity-20 bg-"
+                    )}`}
+                  >
+                    <TypingIndicator />
                   </div>
                 </motion.div>
-              ))}
-            </AnimatePresence>
-            {model.isTyping && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className={`mt-2 rounded-2xl ${model.color.replace(
-                  "bg-",
-                  "bg-opacity-20 bg-"
-                )} self-start`}
-              >
-                <TypingIndicator />
-              </motion.div>
-            )}
-          </div>
-        </ScrollArea>
+              )}
+            </div>
+          </ScrollArea>
+        </div>
 
-        <div className="mt-4 flex w-full relative">
+        <div className="mt-4 flex w-full relative flex-shrink-0">
           <form onSubmit={handleSubmit} className="flex w-full">
             <input
               type="text"

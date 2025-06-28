@@ -143,10 +143,11 @@ export function Chat({
   return (
     <div className="flex flex-1 gap-4 p-4 pt-0 overflow-hidden">
       {/* Chat Area */}
-      <div className="flex-1 space-y-4 overflow-hidden">
+      <div className="flex-1 overflow-auto">
         <div
-          className="grid gap-4 h-full"
-          style={{ gridTemplateColumns: `repeat(${models.length}, 1fr)` }}
+          className={`grid gap-4 ${
+            models.length === 1 ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2"
+          }`}
         >
           {models.map((model) => (
             <ChatModelComponent

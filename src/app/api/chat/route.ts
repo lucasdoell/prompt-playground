@@ -8,12 +8,13 @@ export async function POST(req: Request) {
     return new Response("Invalid body", { status: 400 });
   }
 
-  const { messages, model, temperature, topP, topK, maxOutputTokens } =
+  const { messages, model, system, temperature, topP, topK, maxOutputTokens } =
     parsedBody.data;
 
   const result = streamText({
     messages: convertToModelMessages(messages),
     model,
+    system,
     temperature,
     topP,
     topK,

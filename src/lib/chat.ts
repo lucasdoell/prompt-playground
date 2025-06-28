@@ -5,6 +5,8 @@ export const chatSchema = z.object({
   messages: z.array(z.any()),
   /** Model to use for the chat. Format: "provider/model" */
   model: z.string().min(1),
+  /** The system prompt to use for the chat. */
+  system: z.string().optional(),
   /** The temperature to use for the chat. */
   temperature: z.number().min(0).max(1).default(0.7),
   /** The top p to use for the chat. */

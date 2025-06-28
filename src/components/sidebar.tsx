@@ -11,6 +11,11 @@ import { SettingsGearIcon } from "@/components/icons/settings-gear";
 import { WorkflowIcon } from "@/components/icons/workflow";
 import { Button } from "@/components/ui/button";
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -28,7 +33,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Zap } from "lucide-react";
 import Link from "next/link";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 const data = {
   navMain: [
@@ -114,6 +119,8 @@ function AnimatedMenuItem({ item }: AnimatedMenuItemProps) {
     stopAnimation: () => void;
   } | null>(null);
 
+  const [isOpen, setIsOpen] = useState(true);
+
   const handleMouseEnter = () => {
     iconRef.current?.startAnimation();
   };
@@ -121,6 +128,47 @@ function AnimatedMenuItem({ item }: AnimatedMenuItemProps) {
   const handleMouseLeave = () => {
     iconRef.current?.stopAnimation();
   };
+
+  const hasSubItems = item.items && item.items.length > 0;
+
+  if (hasSubItems) {
+    return (
+      <SidebarMenuItem>
+        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+          <CollapsibleTrigger asChild>
+            <SidebarMenuButton
+              tooltip={item.title}
+              className="group"
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+            >
+              <item.icon ref={iconRef} size={16} />
+              <span>{item.title}</span>
+              <ChevronRightIcon
+                className={`ml-auto size-4 transition-transform duration-200 ${
+                  isOpen ? "rotate-90" : ""
+                }`}
+                size={16}
+              />
+            </SidebarMenuButton>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <SidebarMenuSub>
+              {item.items?.map((subItem) => (
+                <SidebarMenuSubItem key={subItem.title}>
+                  <SidebarMenuSubButton asChild>
+                    <Link href={subItem.url}>
+                      <span>{subItem.title}</span>
+                    </Link>
+                  </SidebarMenuSubButton>
+                </SidebarMenuSubItem>
+              ))}
+            </SidebarMenuSub>
+          </CollapsibleContent>
+        </Collapsible>
+      </SidebarMenuItem>
+    );
+  }
 
   return (
     <SidebarMenuItem>
@@ -134,22 +182,8 @@ function AnimatedMenuItem({ item }: AnimatedMenuItemProps) {
         <Link href={item.url}>
           <item.icon ref={iconRef} size={16} />
           <span>{item.title}</span>
-          {item.items && <ChevronRightIcon className="ml-auto size-4" />}
         </Link>
       </SidebarMenuButton>
-      {item.items && (
-        <SidebarMenuSub>
-          {item.items.map((subItem) => (
-            <SidebarMenuSubItem key={subItem.title}>
-              <SidebarMenuSubButton asChild>
-                <Link href={subItem.url}>
-                  <span>{subItem.title}</span>
-                </Link>
-              </SidebarMenuSubButton>
-            </SidebarMenuSubItem>
-          ))}
-        </SidebarMenuSub>
-      )}
     </SidebarMenuItem>
   );
 }

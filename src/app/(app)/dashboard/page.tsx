@@ -13,15 +13,17 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Switch } from "@/components/ui/switch";
 import { ChatSettingsProvider } from "@/contexts/chat-settings-context";
-import { availableModels } from "@/lib/models";
+import { AvailableModelNames, availableModels } from "@/lib/models";
 import { Link, Unlink } from "lucide-react";
 import { useState } from "react";
 
 export default function ChatPlayground() {
   const [linkedInputs, setLinkedInputs] = useState(true);
-  const [activeModelIds, setActiveModelIds] = useState(["gpt-4o"]);
+  const [activeModelIds, setActiveModelIds] = useState<AvailableModelNames[]>([
+    "gpt-4o",
+  ]);
 
-  const handleAddModel = (modelId: string) => {
+  const handleAddModel = (modelId: AvailableModelNames) => {
     if (!activeModelIds.includes(modelId)) {
       setActiveModelIds([...activeModelIds, modelId]);
     }

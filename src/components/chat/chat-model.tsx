@@ -17,6 +17,7 @@ import { DefaultChatTransport } from "ai";
 import { AnimatePresence, motion } from "motion/react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import { ChatMessage } from "./chat-message";
 import { TypingIndicator } from "./typing-indicator";
 
 interface ChatModelComponentProps {
@@ -163,51 +164,35 @@ export function ChatModelComponent({
       <CardContent className="flex flex-col flex-1 p-4 pt-0 min-h-0">
         <div className="flex-1 min-h-0">
           <ScrollArea className="h-full w-full" ref={scrollAreaRef}>
-            <div className="flex flex-col gap-2 p-1 min-h-full">
+            <div className="flex flex-col gap-4 p-1 min-h-full">
               <div className="flex-1" />
               <AnimatePresence mode="wait">
                 {messages.map((message, index) => {
                   const textPart = message.parts.find(
                     (part) => part.type === "text"
                   );
+                  const timestamp = message.metadata?.timestamp
+                    ? new Date(message.metadata.timestamp)
+                    : new Date();
+
                   return (
                     <motion.div
                       key={message.id || `${model.id}-${index}`}
                       layout="position"
-                      className={`w-full flex ${
-                        message.role === "user"
-                          ? "justify-end"
-                          : "justify-start"
-                      }`}
                       layoutId={`container-${model.id}-[${index}]`}
                       transition={transitionConfig}
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.8 }}
                     >
-                      <div
-                        className={`max-w-[80%] break-words rounded-2xl overflow-hidden ${
-                          message.role === "user"
-                            ? "bg-blue-500 text-white"
-                            : "bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-gray-100"
-                        }`}
-                      >
-                        <div className="px-3 py-2 text-sm leading-relaxed overflow-wrap-anywhere">
-                          {textPart?.type === "text" ? textPart.text : ""}
-                        </div>
-                        {status !== "submitted" &&
-                          status !== "streaming" &&
-                          message.metadata?.timestamp && (
-                            <div className="px-3 pb-1 text-xs opacity-70">
-                              {new Date(
-                                message.metadata.timestamp
-                              ).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </div>
-                          )}
-                      </div>
+                      <ChatMessage
+                        message={{
+                          role: message.role as "user" | "assistant",
+                          content:
+                            textPart?.type === "text" ? textPart.text : "",
+                          timestamp: timestamp,
+                        }}
+                      />
                     </motion.div>
                   );
                 })}

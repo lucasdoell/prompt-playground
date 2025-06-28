@@ -14,13 +14,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { AvailableModelNames } from "@/lib/models";
 import type { AvailableModel } from "@/types/chat";
 import { Plus } from "lucide-react";
 
 interface ModelSelectorProps {
-  availableModels: AvailableModel[];
+  availableModels: readonly AvailableModel[];
   activeModelIds: string[];
-  onAddModel: (modelId: string) => void;
+  onAddModel: (modelId: AvailableModelNames) => void;
 }
 
 export function ModelSelector({

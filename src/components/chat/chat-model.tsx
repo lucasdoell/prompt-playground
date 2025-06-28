@@ -1,7 +1,5 @@
 "use client";
 
-import type React from "react";
-
 import {
   ArrowBigUpIcon,
   type ArrowBigUpIconHandle,
@@ -11,8 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useChatSettings } from "@/contexts/chat-settings-context";
 import type { ChatModel } from "@/types/chat";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 import { AnimatePresence, motion } from "motion/react";
+import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { TypingIndicator } from "./typing-indicator";
 
@@ -24,6 +26,14 @@ interface ChatModelComponentProps {
   currentInput: string;
   onInputChange: (value: string) => void;
   onSendMessage: () => void;
+  onUpdateMessages: (
+    modelId: string,
+    messages: Array<{
+      role: "user" | "assistant";
+      content: string;
+      timestamp: Date;
+    }>
+  ) => void;
 }
 
 const transitionConfig = {
@@ -40,14 +50,50 @@ export function ChatModelComponent({
   currentInput,
   onInputChange,
   onSendMessage,
+  onUpdateMessages,
 }: ChatModelComponentProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const xIconRef = useRef<XIconHandle>(null);
   const arrowIconRef = useRef<ArrowBigUpIconHandle>(null);
   const [localInput, setLocalInput] = useState("");
+  const { settings } = useChatSettings();
 
+  const { messages, sendMessage, status } = useChat({
+    transport: new DefaultChatTransport({
+      api: "/api/chat",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: {
+        model: `${model.provider.toLowerCase()}/${model.id}`,
+        system: settings.systemPrompt,
+        temperature: settings.temperature,
+        maxOutputTokens: settings.maxOutputTokens,
+        topP: settings.topP,
+        topK: settings.topK,
+      },
+    }),
+    onFinish: () => {
+      // Update parent component with new messages when AI finishes
+      const updatedMessages = messages.map((msg) => {
+        const textPart = msg.parts.find((part) => part.type === "text");
+        return {
+          role: msg.role as "user" | "assistant",
+          content: textPart?.text || "",
+          timestamp: new Date(),
+        };
+      });
+      onUpdateMessages(model.id, updatedMessages);
+    },
+  });
+
+  const isLoading = status === "streaming" || status === "submitted";
+  const isInputDisabled = status === "streaming" || status === "submitted";
+  const showTypingIndicator = status === "submitted" || status === "streaming";
   const inputValue = linkedInputs ? currentInput : localInput;
-  const handleInputChange = (value: string) => {
+
+  const handleInputChangeWrapper = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
     if (linkedInputs) {
       onInputChange(value);
     } else {
@@ -55,16 +101,25 @@ export function ChatModelComponent({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputValue.trim()) return;
+    if (!inputValue.trim() || isInputDisabled) return;
 
-    if (!linkedInputs) {
-      // For individual model, we need to handle the message locally
-      // This would need to be handled by the parent component
+    const messageContent = inputValue.trim();
+
+    // Clear input
+    if (linkedInputs) {
+      onInputChange("");
+      onSendMessage();
+    } else {
       setLocalInput("");
     }
-    onSendMessage();
+
+    // Send message using AI SDK
+    await sendMessage({
+      role: "user",
+      parts: [{ type: "text", text: messageContent }],
+    });
   };
 
   useEffect(() => {
@@ -76,7 +131,7 @@ export function ChatModelComponent({
         viewport.scrollTop = viewport.scrollHeight;
       }
     }
-  }, [model.messages, model.isTyping]);
+  }, [messages, isLoading]);
 
   return (
     <Card className="flex flex-col h-[600px]">
@@ -108,37 +163,44 @@ export function ChatModelComponent({
             <div className="flex flex-col gap-2 p-1 min-h-full">
               <div className="flex-1" />
               <AnimatePresence mode="wait">
-                {model.messages.map((message, index) => (
-                  <motion.div
-                    key={`${model.id}-${index}`}
-                    layout="position"
-                    className={`w-full flex ${
-                      message.role === "user" ? "justify-end" : "justify-start"
-                    }`}
-                    layoutId={`container-${model.id}-[${index}]`}
-                    transition={transitionConfig}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                  >
-                    <div
-                      className={`max-w-[80%] break-words rounded-2xl overflow-hidden ${
+                {messages.map((message, index) => {
+                  const textPart = message.parts.find(
+                    (part) => part.type === "text"
+                  );
+                  return (
+                    <motion.div
+                      key={message.id || `${model.id}-${index}`}
+                      layout="position"
+                      className={`w-full flex ${
                         message.role === "user"
-                          ? "bg-blue-500 text-white"
-                          : "bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-gray-100"
+                          ? "justify-end"
+                          : "justify-start"
                       }`}
+                      layoutId={`container-${model.id}-[${index}]`}
+                      transition={transitionConfig}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
                     >
-                      <div className="px-3 py-2 text-sm leading-relaxed overflow-wrap-anywhere">
-                        {message.content}
+                      <div
+                        className={`max-w-[80%] break-words rounded-2xl overflow-hidden ${
+                          message.role === "user"
+                            ? "bg-blue-500 text-white"
+                            : "bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-gray-100"
+                        }`}
+                      >
+                        <div className="px-3 py-2 text-sm leading-relaxed overflow-wrap-anywhere">
+                          {textPart?.type === "text" ? textPart.text : ""}
+                        </div>
+                        <div className="px-3 pb-1 text-xs opacity-70">
+                          {new Date().toLocaleTimeString()}
+                        </div>
                       </div>
-                      <div className="px-3 pb-1 text-xs opacity-70">
-                        {message.timestamp.toLocaleTimeString()}
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
+                    </motion.div>
+                  );
+                })}
               </AnimatePresence>
-              {model.isTyping && (
+              {showTypingIndicator && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -154,26 +216,27 @@ export function ChatModelComponent({
         </div>
 
         <div className="mt-4 flex w-full relative flex-shrink-0">
-          <form onSubmit={handleSubmit} className="flex w-full">
+          <form onSubmit={handleFormSubmit} className="flex w-full">
             <input
               type="text"
-              onChange={(e) => handleInputChange(e.target.value)}
+              onChange={handleInputChangeWrapper}
               value={inputValue}
               className="relative h-10 w-full flex-grow rounded-full border border-input bg-background px-4 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               placeholder="Type your message..."
+              disabled={isInputDisabled}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  handleSubmit(e);
+                  handleFormSubmit(e);
                 }
               }}
             />
 
             <motion.div
-              key={`${model.id}-input-${model.messages.length}`}
+              key={`${model.id}-input-${messages.length}`}
               layout="position"
               className="pointer-events-none absolute z-10 flex h-10 w-full items-center overflow-hidden break-words rounded-full bg-muted [word-break:break-word]"
-              layoutId={`container-${model.id}-[${model.messages.length}]`}
+              layoutId={`container-${model.id}-[${messages.length}]`}
               transition={transitionConfig}
               initial={{ opacity: 0.6, zIndex: -1 }}
               animate={{ opacity: 0.6, zIndex: -1 }}
@@ -188,7 +251,7 @@ export function ChatModelComponent({
               type="submit"
               size="sm"
               className="ml-2 h-10 w-10 rounded-full p-0"
-              disabled={!inputValue.trim()}
+              disabled={!inputValue.trim() || isInputDisabled}
               onMouseEnter={() => arrowIconRef.current?.startAnimation()}
               onMouseLeave={() => arrowIconRef.current?.stopAnimation()}
             >

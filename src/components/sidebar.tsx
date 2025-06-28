@@ -1,18 +1,14 @@
 "use client";
 
-import {
-  ChevronRight,
-  GitBranch,
-  Home,
-  Library,
-  Plus,
-  Settings,
-  Shuffle,
-  TestTube,
-  Zap,
-} from "lucide-react";
-
-import { Badge } from "@/components/ui/badge";
+import { BookTextIcon } from "@/components/icons/book-text";
+import { ChevronRightIcon } from "@/components/icons/chevron-right";
+import { ChevronsLeftRightIcon } from "@/components/icons/chevrons-left-right";
+import { FlaskIcon } from "@/components/icons/flask";
+import { HomeIcon } from "@/components/icons/home";
+import { PlusIcon, PlusIconHandle } from "@/components/icons/plus";
+import type { SettingsGearIconHandle } from "@/components/icons/settings-gear";
+import { SettingsGearIcon } from "@/components/icons/settings-gear";
+import { WorkflowIcon } from "@/components/icons/workflow";
 import { Button } from "@/components/ui/button";
 import {
   Sidebar,
@@ -30,30 +26,31 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { Zap } from "lucide-react";
 import Link from "next/link";
+import { useRef } from "react";
 
 const data = {
   navMain: [
     {
       title: "Dashboard",
       url: "/",
-      icon: Home,
+      icon: HomeIcon,
     },
     {
       title: "Model Comparison",
       url: "/models",
-      icon: Shuffle,
-      badge: "New",
+      icon: ChevronsLeftRightIcon,
     },
     {
       title: "Prompt Testing",
       url: "/prompts",
-      icon: TestTube,
+      icon: FlaskIcon,
     },
     {
       title: "Prompt Library",
       url: "/library",
-      icon: Library,
+      icon: BookTextIcon,
       items: [
         {
           title: "My Prompts",
@@ -72,7 +69,7 @@ const data = {
     {
       title: "Experiments",
       url: "/experiments",
-      icon: GitBranch,
+      icon: WorkflowIcon,
       items: [
         {
           title: "A/B Tests",
@@ -89,12 +86,123 @@ const data = {
     {
       title: "Settings",
       url: "/settings",
-      icon: Settings,
+      icon: SettingsGearIcon,
     },
   ],
 };
 
+interface IconProps {
+  ref?: React.Ref<{
+    startAnimation: () => void;
+    stopAnimation: () => void;
+  }>;
+  size?: number;
+}
+
+interface AnimatedMenuItemProps {
+  item: {
+    title: string;
+    url: string;
+    icon: React.ComponentType<IconProps>;
+    items?: Array<{ title: string; url: string }>;
+  };
+}
+
+function AnimatedMenuItem({ item }: AnimatedMenuItemProps) {
+  const iconRef = useRef<{
+    startAnimation: () => void;
+    stopAnimation: () => void;
+  } | null>(null);
+
+  const handleMouseEnter = () => {
+    iconRef.current?.startAnimation();
+  };
+
+  const handleMouseLeave = () => {
+    iconRef.current?.stopAnimation();
+  };
+
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton
+        asChild
+        tooltip={item.title}
+        className="group"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <Link href={item.url}>
+          <item.icon ref={iconRef} size={16} />
+          <span>{item.title}</span>
+          {item.items && <ChevronRightIcon className="ml-auto size-4" />}
+        </Link>
+      </SidebarMenuButton>
+      {item.items && (
+        <SidebarMenuSub>
+          {item.items.map((subItem) => (
+            <SidebarMenuSubItem key={subItem.title}>
+              <SidebarMenuSubButton asChild>
+                <Link href={subItem.url}>
+                  <span>{subItem.title}</span>
+                </Link>
+              </SidebarMenuSubButton>
+            </SidebarMenuSubItem>
+          ))}
+        </SidebarMenuSub>
+      )}
+    </SidebarMenuItem>
+  );
+}
+
+interface AnimatedSecondaryMenuItemProps {
+  item: {
+    title: string;
+    url: string;
+    icon: React.ComponentType<IconProps>;
+  };
+}
+
+function AnimatedSecondaryMenuItem({ item }: AnimatedSecondaryMenuItemProps) {
+  const iconRef = useRef<SettingsGearIconHandle | null>(null);
+
+  const handleMouseEnter = () => {
+    iconRef.current?.startAnimation();
+  };
+
+  const handleMouseLeave = () => {
+    iconRef.current?.stopAnimation();
+  };
+
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton
+        asChild
+        size="sm"
+        tooltip={item.title}
+        className="group"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <Link href={item.url}>
+          <item.icon ref={iconRef} size={16} />
+          <span>{item.title}</span>
+        </Link>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  );
+}
+
 export function AppSidebar() {
+  const plusIconRef = useRef<PlusIconHandle | null>(null);
+
+  const handleButtonMouseEnter = () => {
+    plusIconRef.current?.startAnimation();
+  };
+
+  const handleButtonMouseLeave = () => {
+    plusIconRef.current?.stopAnimation();
+  };
+
   return (
     <Sidebar variant="inset" collapsible="icon">
       <SidebarHeader>
@@ -124,35 +232,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {data.navMain.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild tooltip={item.title}>
-                    <Link href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                      {item.badge && (
-                        <Badge variant="secondary" className="ml-auto">
-                          {item.badge}
-                        </Badge>
-                      )}
-                      {item.items && (
-                        <ChevronRight className="ml-auto size-4" />
-                      )}
-                    </Link>
-                  </SidebarMenuButton>
-                  {item.items && (
-                    <SidebarMenuSub>
-                      {item.items.map((subItem) => (
-                        <SidebarMenuSubItem key={subItem.title}>
-                          <SidebarMenuSubButton asChild>
-                            <Link href={subItem.url}>
-                              <span>{subItem.title}</span>
-                            </Link>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))}
-                    </SidebarMenuSub>
-                  )}
-                </SidebarMenuItem>
+                <AnimatedMenuItem key={item.title} item={item} />
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
@@ -161,22 +241,20 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {data.navSecondary.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild size="sm" tooltip={item.title}>
-                    <Link href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <AnimatedSecondaryMenuItem key={item.title} item={item} />
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <Button className="w-full" size="sm">
-          <Plus className="size-4 mr-2" />
+        <Button
+          className="w-full group"
+          size="sm"
+          onMouseEnter={handleButtonMouseEnter}
+          onMouseLeave={handleButtonMouseLeave}
+        >
+          <PlusIcon ref={plusIconRef} className="size-4 mr-2" />
           New Experiment
         </Button>
       </SidebarFooter>

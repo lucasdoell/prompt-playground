@@ -66,6 +66,12 @@ export function ChatModelComponent({
   const arrowIconRef = useRef<ArrowBigUpIconHandle>(null);
   const [localInput, setLocalInput] = useState("");
   const { settings } = useChatSettings();
+  const settingsRef = useRef(settings);
+
+  // Keep the ref updated with current settings
+  useEffect(() => {
+    settingsRef.current = settings;
+  }, [settings]);
 
   const { messages, sendMessage, status } = useChat<
     UIMessage<{ timestamp?: string }>
@@ -75,14 +81,19 @@ export function ChatModelComponent({
       headers: {
         "Content-Type": "application/json",
       },
-      body: {
-        model: `${model.provider.toLowerCase()}/${model.id}`,
-        system: settings.systemPrompt,
-        temperature: settings.temperature,
-        maxOutputTokens: settings.maxOutputTokens,
-        topP: settings.topP,
-        topK: settings.topK,
-      },
+      prepareSendMessagesRequest: ({ messages, body, id }) => ({
+        body: {
+          ...body,
+          id,
+          messages,
+          model: `${model.provider.toLowerCase()}/${model.id}`,
+          system: settingsRef.current.systemPrompt,
+          temperature: settingsRef.current.temperature,
+          maxOutputTokens: settingsRef.current.maxOutputTokens,
+          topP: settingsRef.current.topP,
+          topK: settingsRef.current.topK,
+        },
+      }),
     }),
     onFinish: () => {
       // Update parent component with new messages when AI finishes

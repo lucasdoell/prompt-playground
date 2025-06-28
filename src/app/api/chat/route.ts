@@ -1,4 +1,4 @@
-import { chatSchema } from "@/lib/chat";
+import { chatSchema } from "@/lib/chat-schema";
 import { convertToModelMessages, streamText } from "ai";
 
 export async function POST(req: Request) {

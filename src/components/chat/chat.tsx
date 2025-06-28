@@ -1,21 +1,22 @@
 "use client";
 
 import { useChatSettings } from "@/contexts/chat-settings-context";
+import { AvailableModelNames } from "@/lib/models";
 import type { AvailableModel, ChatModel } from "@/types/chat";
 import { useEffect, useRef, useState } from "react";
 import { ChatControls } from "./chat-controls";
 import { ChatModelComponent } from "./chat-model";
 
 interface ChatProps {
-  availableModels: AvailableModel[];
-  initialModels?: string[];
+  availableModels: readonly AvailableModel[];
+  initialModels?: AvailableModelNames[];
   linkedInputs?: boolean;
   onRemoveModel?: (modelId: string) => void;
 }
 
 export function Chat({
   availableModels,
-  initialModels = ["gpt-4"],
+  initialModels = ["gpt-4.1"],
   linkedInputs = true,
   onRemoveModel,
 }: ChatProps) {
